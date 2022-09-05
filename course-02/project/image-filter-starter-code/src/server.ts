@@ -1,6 +1,7 @@
-import express from "express";
+import express, { NextFunction } from "express";
 import bodyParser from "body-parser";
 import { filterImageFromURL, deleteLocalFiles } from "./util/util";
+import {Application, Request, Response, Errback} from "express";
 
 (async () => {
   // Init the Express application
@@ -34,13 +35,17 @@ import { filterImageFromURL, deleteLocalFiles } from "./util/util";
   // Displays a simple message to the user
   
   
-  app.get("/", async (req, res) => {
-    res.send("try GET /filteredimage?image_url={{}}");
+  app.get("/", async (req:Request, res:Response) => {
+    res.send("try GET /filteredimage?image_url={{}}, updated");
   });
 
-  const imgarr: string[] = [];
-  app.get("/filteredimage", async (req, res) => {
-    let { image_url } = req.query;
+  
+  app.get("/filteredimage", async (req:Request, res:Response, next: NextFunction) => {
+    
+    try{
+
+      let { image_url } = req.query;
+   
    
     if (!image_url) {
       return res.status(400).send(`Image URL is required`);
@@ -49,14 +54,22 @@ import { filterImageFromURL, deleteLocalFiles } from "./util/util";
     else {
     
 
-      let filteredimage = await filterImageFromURL(image_url);
+      let filteredimage:string = await filterImageFromURL(req.query.image_url) as string;
+      console.log(typeof(filteredimage))
        res.status(200).sendFile(filteredimage);
        res.on('finish',()=>{
-        deleteLocalFiles([filteredimage])
+        deleteLocalFiles([filteredimage]);
        })
       
     
     }
+
+    }
+    catch(e){
+      return next(e);
+    }
+    
+    
   });
 
   // Start the Server
